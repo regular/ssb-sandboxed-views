@@ -1,4 +1,4 @@
-flumereview-sandbox
+ssb-review-sandbox
 ---
 
-License: ISC
+License: MIT
