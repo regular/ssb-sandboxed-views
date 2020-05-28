@@ -1,8 +1,8 @@
-const View = require('..')
+const View = require('../view')
 const pull = require('pull-stream')
 
 const flumelog = {
-  filename: __dirname + '/flume',
+  filename: '/tmp/flume',
   get:(key, cb)=>{
     cb(new Error('get!'))
   }
@@ -26,7 +26,7 @@ view.since.once( since=>{
   console.log(`since: ${since}`)
   console.log(`code fingerprint: ${view.fingerprint}`)
   pull(
-    pull.values(msgs(4)),
+    pull.values(msgs(10001)),
     view.createSink( err=>{
       console.error(`sink error: ${err == true ? err : err && err.message}`)
       console.error(`     stack: ${err == true ? err : err && err.stack}`)

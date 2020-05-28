@@ -6,7 +6,11 @@
   "scripts": {
     "test": "tape test/**"
   },
-  "keywords": ["ssb-revisions", "ssb", "flumedb"],
+  "keywords": [
+    "ssb-revisions",
+    "ssb",
+    "flumedb"
+  ],
   "dependencies": {
     "charwise": "^3.0.1",
     "debug": "^4.1.1",
@@ -22,5 +26,8 @@
     "pull-stream": "^3.5.0"
   },
   "author": "Jan Bölsche <jan@lagomorph.de> (https://regular.codes/)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "tape": "^5.0.1"
+  }
 }
