@@ -1,8 +1,7 @@
 const View = require('../view')
 const pull = require('pull-stream')
 
-const flumelog = {
-  filename: '/tmp/flume',
+const ssb = {
   get:(key, cb)=>{
     cb(new Error('get!'))
   }
@@ -20,7 +19,7 @@ const code = `
     return propValue.map(x => [x, revisionRoot])
   }
   `
-const makeView = View(flumelog)
+const makeView = View(ssb, '/tmp')
 const view = makeView(code)
 view.since.once( since=>{
   console.log(`since: ${since}`)
