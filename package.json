@@ -33,5 +33,16 @@
   "devDependencies": {
     "pull-cat": "^1.1.11",
     "tape": "^5.0.1"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/regular/ssb-sandboxed-views.git"
+  },
+  "bugs": {
+    "url": "https://github.com/regular/ssb-sandboxed-views/issues"
+  },
+  "homepage": "https://github.com/regular/ssb-sandboxed-views#readme"
 }
