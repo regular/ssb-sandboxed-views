@@ -119,15 +119,12 @@ module.exports = function(flumelog, level_dir) {
     }
 
     function get(key, cb) {
-      // wait for db to be initialized
-      since.once( ()=>{
-        db.get(key, function (err, seq) {
-          if (err && err.name === 'NotFoundError') return cb(err)
-          if (err) return cb(explain(err, 'ssb-review-sandbox.get: key not found:'+key))
-          flumelog.get(seq, (err, value) => {
-            if (err) return cb(explain(err, 'ssb-review-sandbox.get: index for:'+key+'pointed at:'+seq+'but log error'))
-            cb(null, value)
-          })
+      db.get(key, function (err, seq) {
+        if (err && err.name === 'NotFoundError') return cb(err)
+        if (err) return cb(explain(err, 'ssb-review-sandbox.get: key not found:'+key))
+        flumelog.get(seq, (err, value) => {
+          if (err) return cb(explain(err, 'ssb-review-sandbox.get: index for:'+key+'pointed at:'+seq+'but log error'))
+          cb(null, value)
         })
       })
     }

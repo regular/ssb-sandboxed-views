@@ -6,7 +6,8 @@ const test = require('tape')
 
 function mocks(opts) {
   opts = opts || {}
-  const {indexingSource, flumeGet} = opts
+  let _closeHook
+  const {indexingSource, flumeGet, close} = opts
 
   const log = {
     since: Obv(),
@@ -19,12 +20,16 @@ function mocks(opts) {
       //console.log('_flumeUse() called')
       create(log)
     },
-    close: {hook: fn=>{
-      //console.log('close.hook() called')
-    }},
+    close: function(cb) {
+      _closeHook(close, [cb])
+    },
     revisions: {
       indexingSource
     }
+  }
+  ssb.close.hook = fn=>{
+    console.log('close.hook called')
+    _closeHook = fn
   }
   const config = {
     path: '/tmp/sandviews-test'+Date.now()
@@ -109,6 +114,44 @@ test('openView, get, read', t=>{
       log.since.set(1)
     }, 600)
     //pull(read(handle), pull.log())
+  })
+
+})
+
+test('close', t=>{
+  const {log, ssb, config} = mocks({close})
+  const sandviews = Sandviews.init(ssb, config)
+
+  t.plan(5)
+  log.since.set(0)
+
+  function close(cb) {
+    t.equal(arguments.length, 1)
+    console.log('original close')
+    cb(null)
+  }
+
+  sandviews.openView(`
+    module.exports = function(kvm) {
+      const {key, value, meta, seq} = kvm
+      const {content} = value
+
+      // if encrypted, content is a string
+      if (content.type == undefined) return [] 
+      return [content.type]
+    }
+  `, (err, handle) => {
+    t.error(err)
+    t.ok(handle)
+
+    sandviews.get(handle, 'bar', (err, result)=>{
+      t.ok(err)
+      console.log('get() returns ' + err.message)
+    })
+
+    ssb.close(err=>{
+      t.error(err)
+    })
   })
 
 })

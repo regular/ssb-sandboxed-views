@@ -1,5 +1,6 @@
-var PullCont = require('pull-cont')
-var pull = require('pull-stream')
+const PullCont = require('pull-cont')
+const pull = require('pull-stream')
+const debug = require('debug')('ssb:sandviews:wrap')
 
 module.exports = function wrap(view, log) {
   const since = log.since
@@ -42,7 +43,7 @@ module.exports = function wrap(view, log) {
     }
     else if(after) {
       if(!waiting.length || waiting[waiting.length - 1].seq <= after) {
-        waiting.push({seq: after, cb: cb})
+        waiting.push({seq: after, cb})
       } else {
         //find the right point to insert this value.
         for(let i = waiting.length - 2; i > 0; i--) {
@@ -54,7 +55,7 @@ module.exports = function wrap(view, log) {
       }
     } else { // after is falsey
       since.once( upto => {
-        if(log.closed) cb(new Error('logdb: closed before log ready'))
+        if(log.closed) cb(new Error('flumedb: closed before log ready'))
         else if(isReady.value && upto === view.since.value) cb()
         else waiting.push({seq: upto, cb: cb})
       })
@@ -68,8 +69,10 @@ module.exports = function wrap(view, log) {
         meta[name] ++
         return pull(
           PullCont( cb => {
-            ready(
-              ()=> cb(null, fn(opts)),
+            ready( err => {
+                if (err) return cb(err)
+                cb(null, fn(opts))
+              },
               opts && opts.since
             )
           }),
@@ -79,9 +82,11 @@ module.exports = function wrap(view, log) {
     },
     async: function (fn, name) {
       return function (opts, cb) {
+        debug(`async wrapper called for ${name}`)
         throwIfClosed(name)
         meta[name] ++
-        ready(() => {
+        ready(err => {
+          if (err) return cb(err)
           fn(opts, cb)
         }, opts && opts.since)
       }
@@ -96,8 +101,10 @@ module.exports = function wrap(view, log) {
   }
 
   function _close (err) {
-    while(waiting.length)
+    debug('_close, %d waiting, err: %s', waiting.length, err)
+    while(waiting.length) {
       waiting.shift().cb(err)
+    }
   }
 
   const o = {
@@ -105,11 +112,14 @@ module.exports = function wrap(view, log) {
     createSink: view.createSink,
     since: view.since,
     close: function (err, cb) {
+      debug('close called')
       if('function' == typeof err) {
         cb = err
         err = null
       }
-      _close(err || new Error('sandviews:view closed'))
+      err = err || new Error('sandviews: view closed')
+      debug(`calling _close with err ${err}`)
+      _close(err)
       if(view.close.length == 1) {
         view.close(cb)
       } else {

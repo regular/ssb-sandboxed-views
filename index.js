@@ -76,7 +76,6 @@ exports.init = function (ssb, config) {
       fp = fingerprint(code, warnings) 
     } catch(err) {return cb(err)}
     if (views[fp]) return views[fp]
-    // TODO: serialize this or use a promse
     views[fp] = wrap(makeView(code, opts), log)
     initNewView(views[fp])
     cb(null, fp)
@@ -92,10 +91,6 @@ exports.init = function (ssb, config) {
     if (!view) return pull.error(new Error(`view not open`))
     return view.read(opts)
   }
-
-  // TODO: decorate get and read
-  // with delay-until-synced
-
 
   return {
     openView,
