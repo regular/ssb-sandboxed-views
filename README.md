@@ -2,6 +2,24 @@ ssb-sandboxed-views
 ---
 This plug-in for ssb-server enables applications to build and query the database indexes they need, without requiring further plug-ins. The goal is for a single instance of ssb-server to serve many different applications with different database views. A view (= indexing function) can be added dynamically. The function then runs in an isolated JS context (quickjs) in a worker thread of ssb-server. The resulting index is identical to the ones created by ssb-review-level/flumeview-level and can be queried in a similar fashion.
 
+``` js
+ssb.sandviews.openView(`
+  module.exports = function(kvm) {
+    const {key, value, meta, seq} = kvm
+    const {content} = value
+
+    // if encrypted, content is a string
+    if (content.type == undefined) return [] 
+    return [content.type]
+  }
+`, (err, handle) => {
+  pull(
+    sandviews.read(handle, {values: false}),
+    pull.log()
+  )
+})
+```
+
 ## Known issues/status
 
 This is experimental and some parts are not implemented yet.
