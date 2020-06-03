@@ -6,12 +6,11 @@ const test = require('tape')
 
 function mocks(opts) {
   opts = opts || {}
-  let _closeHook
+  const _closeHooks = []
   const {indexingSource, flumeGet, close} = opts
 
   const log = {
     since: Obv(),
-    ready: Obv(),
     get: flumeGet
   }
 
@@ -20,8 +19,18 @@ function mocks(opts) {
       //console.log('_flumeUse() called')
       create(log)
     },
+    ready: function() {return this.is_ready},
     close: function(cb) {
-      _closeHook(close, [cb])
+      callHooks(close || (cb=>cb(null)), [cb])
+      function callHooks(fn, args) {
+        if (_closeHooks.length) {
+          _closeHooks.shift()(function () {
+            callHooks(fn, Array.from(arguments))
+          }, args)
+        } else {
+          fn.apply(this, args)
+        }
+      }
     },
     revisions: {
       indexingSource
@@ -29,7 +38,7 @@ function mocks(opts) {
   }
   ssb.close.hook = fn=>{
     console.log('close.hook called')
-    _closeHook = fn
+    _closeHooks.push(fn)
   }
   const config = {
     path: '/tmp/sandviews-test'+Date.now()
@@ -44,7 +53,9 @@ test('init', t=>{
   t.ok(sandviews.openView, 'has openView')
   t.ok(sandviews.get, 'has get')
   t.ok(sandviews.read, 'has read')
-  t.end()
+  ssb.close(()=>{
+    t.end()
+  })
 })
 
 test('openView, get, read', t=>{
@@ -93,7 +104,7 @@ test('openView, get, read', t=>{
     t.error(err)
     t.ok(handle)
 
-    // get() and read() should wait until log and leveldb are both ready and synced
+    // get() and read() should wait until ssb and leveldb are both ready and synced
     sandviews.get(handle, 'bar', (err, result)=>{
       t.error(err) 
       t.equal(result, 'hey!')
@@ -108,7 +119,7 @@ test('openView, get, read', t=>{
     )
 
     setTimeout( ()=>{
-      log.ready.set(true)
+      ssb.is_ready = true
     }, 500)
     setTimeout( ()=>{
       log.since.set(1)

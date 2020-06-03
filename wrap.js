@@ -2,9 +2,8 @@ const PullCont = require('pull-cont')
 const pull = require('pull-stream')
 const debug = require('debug')('ssb:sandviews:wrap')
 
-module.exports = function wrap(view, log) {
+module.exports = function wrap(view, log, isReady) {
   const since = log.since
-  const isReady = log.ready
   const waiting = []
   const meta = {}
 

@@ -6,6 +6,7 @@ const debug = require('debug')('ssb:sandviews')
 const View = require('./view')
 const Obv = require('obv')
 const obvReduce = require('./obv-reduce')
+const IsReady = require('./ssb-ready')
 const wrap = require('./wrap')
 
 exports.name = 'sandviews'
@@ -21,6 +22,7 @@ exports.init = function (ssb, config) {
   let makeView
   let smallestSince
   let log
+  const isReady = IsReady(ssb)
   const views = {}
 
   ssb._flumeUse('sandviews', _log =>{
@@ -76,7 +78,7 @@ exports.init = function (ssb, config) {
       fp = fingerprint(code, warnings) 
     } catch(err) {return cb(err)}
     if (views[fp]) return views[fp]
-    views[fp] = wrap(makeView(code, opts), log)
+    views[fp] = wrap(makeView(code, opts), log, isReady)
     initNewView(views[fp])
     cb(null, fp)
   }
