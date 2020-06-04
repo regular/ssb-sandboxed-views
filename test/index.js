@@ -105,7 +105,7 @@ test('openView, get, read', t=>{
     t.ok(handle)
 
     // get() and read() should wait until ssb and leveldb are both ready and synced
-    sandviews.get(handle, 'bar', (err, result)=>{
+    sandviews.get(handle, ['bar', 'foo'], (err, result)=>{
       t.error(err) 
       t.equal(result, 'hey!')
     })
@@ -114,7 +114,7 @@ test('openView, get, read', t=>{
       sandviews.read(handle, {values: false}),
       pull.collect( (err, results) => {
         t.error(err)
-        t.deepEqual(results, [{ key: 'bar', seq: 0 }])
+        t.deepEqual(results, [{ key: ['bar', 'foo'], seq: 0 }])
       })
     )
 
@@ -126,7 +126,6 @@ test('openView, get, read', t=>{
     }, 600)
     //pull(read(handle), pull.log())
   })
-
 })
 
 test('close', t=>{

@@ -22,6 +22,7 @@
     "mkdirp": "^0.5.5",
     "obv": "0.0.1",
     "pull-buffer-until": "^2.0.0",
+    "pull-cont": "^0.1.1",
     "pull-level": "^2.0.3",
     "pull-looper": "^1.0.0",
     "pull-paramap": "^1.2.1",

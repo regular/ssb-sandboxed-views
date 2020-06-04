@@ -50,6 +50,7 @@ module.exports = function(flumelog, level_dir) {
 
     // maps {value, old_value} => [leveldb puts and dels]
     function createMapStream(code) {
+
       function throughSandbox(bufferSize) {
         if (bufferSize < 2) {
           return sandbox(wrapCode(code, {asArray: false}))
@@ -62,7 +63,11 @@ module.exports = function(flumelog, level_dir) {
         }
       }
 
+      const revRoots = []
       return pull(
+        pull.through( vov =>{
+          revRoots.push(vov.since !== undefined ? null : revRoot(vov.value))
+        }),
         throughSandbox(bufferSize),  
         pull.map(data => {
           if (data.since !== undefined) return data
@@ -71,6 +76,11 @@ module.exports = function(flumelog, level_dir) {
           const diff = array_diff(old_entries, new_entries)
           const dels = diff.del.map(key => ({ key, type: 'del' }) )
           return puts.concat(dels)
+        }),
+        pull.through( batch=>{
+          const r = revRoots.shift()
+          if (r == null) return
+          batch.forEach( e=>e.key = fixKey(e.key, r))
         })
       )
     }
@@ -226,4 +236,13 @@ function maxLength(n) {
   return function(buffer) {
     return buffer.length >= n
   }
+}
+
+function revRoot(kvm) {
+  return kvm.value.content.revisionRoot || kvm.key
+}
+
+function fixKey(key, revRoot) {
+  if (!Array.isArray(key)) key = [key] 
+  return key.concat(revRoot)
 }
