@@ -1,6 +1,6 @@
 {
   "name": "ssb-sandboxed-views",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Application-provided indexer code running in a quickjs sandox inside a worker_thread",
   "main": "index.js",
   "scripts": {
