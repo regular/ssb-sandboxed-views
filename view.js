@@ -38,9 +38,16 @@ module.exports = function(flumelog, level_dir) {
       return Level(dbPath, {keyEncoding: charwise, valueEncoding: 'json'})
     }
     function close(cb) {
+      debug('close called')
       closed = true
       if (outdated) return db.close(cb)
-      if (drain) return drain.abort( ()=>{ db.close(cb) })
+      if (drain) {
+        debug('aborting drain')
+        return drain.abort( ()=>{ 
+          debug('drain aborted')
+          db.close(cb) 
+        })
+      }
       if (!db) return cb()
       since.once(() => db.close(cb))
     }
