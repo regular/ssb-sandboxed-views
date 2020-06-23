@@ -68,6 +68,7 @@ exports.init = function (ssb, config) {
   // creates or gets a sandboxed-view
   // returns handle
   function openView(code, opts, cb) {
+    debug('openView called')
     if (typeof opts == 'function') {
       cb = opts
       opts = {}
@@ -77,7 +78,12 @@ exports.init = function (ssb, config) {
     try {
       fp = fingerprint(code, warnings) 
     } catch(err) {return cb(err)}
-    if (views[fp]) return views[fp]
+    debug('code fingerprint is %s', fp)
+    if (views[fp]) {
+      debug('return cached view instance for %s', fp)
+      return cb(null, fp)
+    }
+    debug('making new view')
     views[fp] = wrap(makeView(code, opts), log, isReady)
     initNewView(views[fp])
     cb(null, fp)
