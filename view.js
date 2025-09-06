@@ -21,6 +21,16 @@ module.exports = function(flumelog, level_dir) {
 
   function makeView(code, opts) {
     opts = opts || {}
+    // Option 'mutate' (default: true)
+    // adds the revisionRoot of a message to the leveldb key array
+    // The effect is that the index reflects the latest state of each
+    // mutable message.
+    // However, sometime we want the simple case where a series
+    // of messages override the same index value, i.e. to get the seq
+    // og the newest message of type `foo`. In such cases, this needs to
+    // be set to false.
+    const mutate = opts.mutate == undefined ? true : opts.mutate
+    
     const warningsRef = opts.warnings
     const bufferSize = opts.bufferSize || 200
     const fp = fingerprint(code, warningsRef)
@@ -64,7 +74,7 @@ module.exports = function(flumelog, level_dir) {
         } else {
           return pull(
             bufferUntil(maxLength(bufferSize), {timeout: 250}),
-            sandbox(wrapCode(code, {asArray: true})),
+            sandbox(wrapCode(code, {asArray: true, mutate})),
             pull.flatten()
           )
         }
@@ -211,12 +221,20 @@ module.exports = function(flumelog, level_dir) {
       isClosed: ()=>closed,
       destroy
     }
+
+    function fixKey(key, revRoot) {
+      if (!mutate) return key
+      if (!Array.isArray(key)) key = [key] 
+      return key.concat(revRoot)
+    }
+
   }
   return makeView
 }
 
 function wrapCode(code, opts) {
   opts = opts || {}
+  const {mutate} = opts
   return `
       const mapper = {}
       ;(function(module) {
@@ -230,7 +248,7 @@ function wrapCode(code, opts) {
           if (data.since !== undefined) return data
           const {value, old_value} = data
           const new_entries = mapFun(value, value.seq, true)
-          const old_entries = old_value ? mapFun(old_value, old_value.seq, false) : []
+          const old_entries = ${mutate ? 'old_value' : false} ? mapFun(old_value, old_value.seq, false) : []
           return {new_entries, old_entries, seq: value.seq}
         })
         ${opts.asArray ? 'return ret' : 'return ret[0]'}
@@ -249,7 +267,3 @@ function revRoot(kvm) {
   return kvm.value.content.revisionRoot || kvm.key
 }
 
-function fixKey(key, revRoot) {
-  if (!Array.isArray(key)) key = [key] 
-  return key.concat(revRoot)
-}
